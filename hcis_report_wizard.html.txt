@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>HCIS Report Wizard (Web)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:16px;max-width:900px}
+textarea,input,select{width:100%;padding:8px;margin:6px 0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:8px 12px;margin-right:6px}
+#out{white-space:pre-wrap;border:1px solid #ccc;padding:10px;min-height:160px}
+</style>
+<h2>HCIS Report Wizard – Básico (sin instalación)</h2>
+<p>Rellena y pulsa <b>Generar</b>. Copia el texto final y pégalo en HCIS.</p>
+<div class="row">
+  <div><label>Fecha <input id="fecha" type="date"></label></div>
+  <div><label>Centro/Unidad <input id="centro" value="Unidad de Geriatría de Enlace"></label></div>
+</div>
+<div class="row">
+  <div><label>Profesional <input id="prof"></label></div>
+  <div><label>Motivo <input id="motivo" value="Valoración integral geriátrica."></label></div>
+</div>
+<label>Situación actual <textarea id="sit"></textarea></label>
+<label>Antecedentes (separados por ; ) <input id="ant"></label>
+<div class="row">
+  <div><label>Barthel <input id="barthel"></label></div>
+  <div><label>Lawton <input id="lawton"></label></div>
+</div>
+<div class="row">
+  <div><label>GDS <input id="gds"></label></div>
+  <div><label>Pfeiffer/MMSE <input id="mmse"></label></div>
+</div>
+<label>Exploración <textarea id="expl"></textarea></label>
+<label>Impresión/Diagnóstico <textarea id="dx"></textarea></label>
+<label>Plan (líneas con guiones) <textarea id="plan" placeholder="- Mantener tratamiento"></textarea></label>
+<div class="row">
+  <div><label>Revisión
+    <select id="rev">
+      <option>no programada</option><option>1 mes</option><option>3 meses</option><option>6 meses</option><option>12 meses</option>
+    </select>
+  </label></div>
+  <div><label>Recomendaciones <input id="recom"></label></div>
+</div>
+<p>
+  <button class="btn" onclick="gen()">Generar</button>
+  <button class="btn" onclick="copy()">Copiar</button>
+  <button class="btn" onclick="downloadTxt()">Descargar .txt</button>
+</p>
+<h3>Texto del informe</h3>
+<div id="out"></div>
+<script>
+const $=id=>document.getElementById(id);
+function gen(){
+  const f=($('fecha').value? new Date($('fecha').value):new Date()).toLocaleDateString('es-ES');
+  const bloques=[];
+  bloques.push('FECHA: '+f);
+  const who=[$('prof').value.trim(),$('centro').value.trim()].filter(Boolean).join(' | ');
+  if(who) bloques.push(who);
+  if($('motivo').value.trim()) bloques.push('MOTIVO DE CONSULTA: '+$('motivo').value.trim());
+  if($('ant').value.trim()) bloques.push('ANTECEDENTES: '+$('ant').value.trim());
+  const sit=$('sit').value.trim(); if(sit) bloques.push('SITUACIÓN ACTUAL: '+sit);
+  const esc=[];
+  if($('barthel').value.trim()) esc.push('Barthel '+$('barthel').value.trim());
+  if($('lawton').value.trim()) esc.push('Lawton '+$('lawton').value.trim());
+  if($('gds').value.trim()) esc.push('GDS '+$('gds').value.trim());
+  if($('mmse').value.trim()) esc.push('Pfeiffer/MMSE '+$('mmse').value.trim());
+  if(esc.length) bloques.push('ESCALAS: '+esc.join(' | '));
+  const expl=$('expl').value.trim(); if(expl) bloques.push('EXPLORACIÓN: '+expl);
+  const dx=$('dx').value.trim(); if(dx) bloques.push('VALORACIÓN/IMPRESIÓN CLÍNICA: '+dx);
+  const plan=$('plan').value.trim().split('\\n').filter(x=>x.trim()).map(x=>x.startsWith('-')?x:'- '+x).join(' ');
+  if(plan) bloques.push('PLAN: '+plan);
+  const rev=$('rev').value; const recom=$('recom').value.trim(); const seg=[];
+  if(rev!=='no programada') seg.push('Revisión en '+rev+'.'); if(recom) seg.push(recom);
+  if(seg.length) bloques.push('SEGUIMIENTO: '+seg.join(' '));
+  $('out').textContent=bloques.join('\\n');
+}
+function copy(){ navigator.clipboard?.writeText($('out').textContent).catch(()=>{}); }
+function downloadTxt(){
+  const blob=new Blob([$('out').textContent],{type:'text/plain'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='informe_hcis.txt'; a.click(); URL.revokeObjectURL(a.href);
+}
+document.addEventListener('DOMContentLoaded',()=>{ $('fecha').value=new Date().toISOString().slice(0,10); });
+</script>
+</html>
